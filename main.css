@@ -7,11 +7,6 @@ svg .active {display: none}
 .active > svg .normal {display: none}
 .active > svg .active {display: block; stroke: currentColor;}
 
-/* ul.tab li:not(:first-child)::before {
-    content: "| ";
-    color: white;
-} */
-
 #filebrowser-container .treeview ul:not(.root) {
     padding-left: 1rem;
 }

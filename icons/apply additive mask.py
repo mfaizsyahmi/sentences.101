@@ -1,3 +1,10 @@
+# This script takes the luminance (grayscale) value of the source images
+# and applies it as its alpha mask. This emulates the "additive" effect
+# in goldsrc.
+#
+# THIS SCRIPT REQUIRES PILLOW.
+# Run "pip install pillow" to install.
+
 from PIL import Image, ImageOps
 from pathlib import Path
 import sys
