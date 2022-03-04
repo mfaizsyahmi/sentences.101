@@ -1,6 +1,7 @@
 # sentences.101
 Website to emulate Valve's vox system in GoldSrc engine.  
-[Link to site TBD](.)
+
+https://mfaizsyahmi.github.io/sentences.101/
 
 # LICENSE
 Released under MIT License. [Read the license here](LICENSE).  
