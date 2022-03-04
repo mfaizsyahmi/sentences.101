@@ -1,0 +1,26 @@
+svg.icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+}
+svg .active {display: none}
+.active > svg .normal {display: none}
+.active > svg .active {display: block; stroke: currentColor;}
+
+/* ul.tab li:not(:first-child)::before {
+    content: "| ";
+    color: white;
+} */
+
+#filebrowser-container .treeview ul:not(.root) {
+    padding-left: 1rem;
+}
+#filebrowser-container li {
+    white-space: nowrap
+}
+#filebrowser-container .listview > li {
+    overflow: hidden;
+}
+#filebrowser-container .listview > li:hover {
+    overflow: visible;
+}

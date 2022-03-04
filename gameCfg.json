@@ -1,0 +1,22 @@
+[{
+    "name": "Half-Life",
+    "id": "valve",
+    "soundPath": "valve_sound/",
+    "listPath": "valve_sound/paths.json",
+    "defaultDir": "vox/",
+    "required": true
+    }, 
+    {
+    "name": "Opposing Force",
+    "id": "gearbox",
+    "soundPath": "gearbox_sound/",
+    "listPath": "gearbox_sound/paths.json",
+    "defaultDir": "vox/"
+    }, 
+    {
+    "name": "Blue Shift",
+    "id": "bshift",
+    "soundPath": "bshift_sound/",
+    "listPath": "bshift_sound/paths.json",
+    "defaultDir": "vox/"
+}]
