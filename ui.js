@@ -247,21 +247,6 @@ class FolderView {
                     ? this.loadTree(qEl("ul"), item[1], [...path, index])
                     : ""
             );
-            /*
-            const li = qEl("li", "folder", {}, 
-                qEl("a", "truncate", { dataset: {
-                        path: [...path, index].join(",")
-                    }}, 
-                    createIconFragment("folder"),
-                    item[0]
-                )
-            );
-            if (item[1].length) {
-                const childUl = document.createElement("ul");
-                this.loadTree(childUl, item[1], [...path, index]);
-                li.append(childUl);
-            }
-            */
 
             fragment.append(li);
         });
