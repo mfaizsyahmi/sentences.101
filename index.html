@@ -100,10 +100,10 @@ gap-2">
 			</button>
 			<h2 class="text-lg inline-block">sentences.101</h2>
 		</header>
-		<nav class="mt-2 flex-grow flex lg:flex-col lg:justify-between">
+		<nav class="mt-2 flex-grow flex lg:flex-col justify-between gap-2">
 			<form id="sidebar-settings">
-				<ul class="topmenu flex flex-row lg:flex-col">
-					<li class="bold lg:mb-2">Games
+				<ul class="topmenu flex flex-row lg:flex-col gap-2">
+					<li class="bold lg:mb-2 flex-shrink-0">Games
 						<ul id="sound-paths" class="submenu">
 							<!-- 
 							<li><label><input type="checkbox" id="soundPath" value="valve_sound" checked readonly> Half-Life</label>
@@ -112,7 +112,7 @@ gap-2">
 							 -->
 						</ul>
 					</li>
-					<li class="bold lg:mb-2">Settings
+					<li class="bold lg:mb-2 flex-shrink-0">Settings
 						<ul class="submenu">
 							<li><label><input type="checkbox" name="historyEnable" checked> Auto-add history</label>
 							<li><label><input type="checkbox" name="fileAutoPlay"  checked> Auto-play files</label>
@@ -148,7 +148,7 @@ gap-2">
 				<textarea id="sentences" class="flex-grow w-full h-48 lg:h-auto resize-none bg-gray-900 text-gray-200 border border-gray-500 p-2"
 					>doop (e95 p103) doctor freeman, (e95) to(e70) anomalous materials test lab immediately(e100)</textarea>
 				<div class="flex flex-wrap justify-between">
-					<div class="p-2 m-2 align-middle justify-between">
+					<div class="self-center m-2 align-middle justify-between">
 						Volume: 
 						<input id="vol" class="align-middle" type="range" min="0" max="100" value="100" oninput="doAdjustVolume(event)"/>
 					</div>
