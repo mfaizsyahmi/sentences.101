@@ -53,8 +53,25 @@ function createIconFragment(name, activeName=null) {
  * @prop {Element} container DOM container for sentence history
  */
 class SentenceHistory {
+
+    /**
+     * localStorage property to store history
+     * @type {string}
+     * @static
+     */
     localStorageProp = "sentence-history";
+    /**
+     * querySelector string targetting DOM element containing the default template 
+     * for history DOM entry
+     * @type {string}
+     */
     defaultTemplateSelector = "#sentence-history-template"
+
+    /**
+     * @typedef {Object} SentenceHistoryEntry
+     * @prop {string} text entry text
+     * @prop {HTMLElement} el DOM element representing the entry
+     */
 
     /**
      * @param {Element} container where the history list DOM will be constructed
@@ -105,7 +122,7 @@ class SentenceHistory {
 
         /**
          * stores the history entries 
-         * @type {Object[]}
+         * @type {SentenceHistoryEntry[]}
          */
         this.entries = this.loadFromStorage()
         .map(el => {return {text: el}});
@@ -125,19 +142,16 @@ class SentenceHistory {
         if (!entryRef) {
             //e.currentTarget.remove()
             console.log("missing ref... how did we got here?", e.currentTarget);
-
         } 
         // double click on DOM entry -> insert to textarea
         else if (e.type == "dblclick" && e.target === e.currentTarget) {
             inst.target.value = entryRef.text;
             this.mru(entryRef);
-            
         } 
         // clicked insert button
         else if (whichEl.dataset.act === "insert") {
             inst.target.value = entryRef.text;
             this.mru(entryRef);
-
         } 
         // clicked remove button
         else if (whichEl.dataset.act === "remove") {
@@ -147,7 +161,7 @@ class SentenceHistory {
 
     /**
      * puts the entry to the top (i.e. to end of this.entries array)
-     * @param {Object} entry the entry object
+     * @param {SentenceHistoryEntry} entry the entry object
      */
     mru(entry) {
         const idx = this.entries.indexOf(entry);
@@ -161,8 +175,8 @@ class SentenceHistory {
 
     /**
      * populate given container with DOM elements representing the entries
-     * @param {Object} entries 
-     * @param {Element} targetEl 
+     * @param {SentenceHistoryEntry[]} entries 
+     * @param {Element} [targetEl] 
      */
     domAddEntries(entries, targetEl=this.container) {
         const fragment = new DocumentFragment(),
@@ -192,12 +206,19 @@ class SentenceHistory {
     /**
      * Check if history has the given string
      * @param {string} str string to find
-     * @returns 
+     * @returns {(SentenceHistoryEntry|undefined)} a found entry object, or undefined
+     * @public
      */
     has(str) {
         return this.entries.find(entry => entry.text === str)
     }
-
+    
+    /**
+     * Add given string to history. 
+     * this updates localStorage.
+     * @param {string} str string to add
+     * @public
+     */
     add(str) {
         if (this.has(str)) return;
         
@@ -211,7 +232,13 @@ class SentenceHistory {
 
         this.saveToStorage(this.entries);
     }
-
+    
+    /**
+     * Remove given string from history.
+     * this updates localStorage.
+     * @param {string} str string to add
+     * @public
+     */
     remove(str) {
         if (!this.has(str)) return;
 
@@ -222,6 +249,10 @@ class SentenceHistory {
         this.saveToStorage(this.entries);
     }
 
+    /**
+     * clears history. this updates localStorage.
+     * @public
+     */
     clear() {
         this.entries.forEach(entry => {
             entry.el.remove();
@@ -231,25 +262,64 @@ class SentenceHistory {
         this.saveToStorage(this.entries);
     }
 
-    // loading from and saving to local storage
+    /**
+     * save entries to localStorage
+     * @param {Object[]} entries 
+     * @private
+     */
     saveToStorage(entries) {
         localStorage[this.localStorageProp] = JSON
             .stringify(entries.map(entry => entry.text));
     }
+    /**
+     * load array of entries from localStorage.
+     * this is not the type used in this.entries. please map appropriately!
+     * @returns {string[]} array of entries
+     * @private 
+     */
     loadFromStorage() {
         return JSON.parse(localStorage[this.localStorageProp] ?? "[]" ) ?? [];
     }
 }
 
+/**
+ * Representation of a game/mod's sound folder contents in the DOM
+ */
 class FolderView {
+    /**
+     * @typedef DirArrayItem
+     * @type {[name: string, sizeOrContent: number|DirArrayItem[]]}
+     */
+    /**
+     * @typedef {Object} GameCfg
+     * @prop {string} soundPath relative path to sound folder for the particular game
+     * @prop {DirArrayItem[]} dirArray nested arrays representing directory contents
+     */
+
+    /**
+     * @param {HTMLElement} container
+     * @param {GameCfg} cfg
+     */
     constructor(container, cfg) {
+        /**
+         * @type {HTMLElement}
+         */
         this.container = container;
+        /**
+         * @type {GameCfg}
+         */
         this.cfg = cfg;
+        /**
+         * @type {DirArrayItem[]}
+         */
         this.dirArray = this.cfg.dirArray;
         
         // create the DOM elements //
 
-        // logical tree el
+        /**
+         * logical tree el
+         * @type {HTMLUlElement}
+         */
         this.tree = qEl("ul", "root", {},
             qEl("li", "folder", {}, 
                 qEl("a", "truncate active", { dataset: {
@@ -262,11 +332,17 @@ class FolderView {
             )
         );
 
-        // logical list el
+        /**
+         * logical list el
+         * @type {HTMLUlElement}
+         */
         this.list = qEl("ul", "", {});
         this.loadList(this.list, this.dirArray);
 
-        // the layout elements
+        /**
+         * the layout elements
+         * @type {HTMLDivElement}
+         */
         this.el = qEl("div",
             `h-full overflow-hidden grid grid-cols-12 gap-2 lg:gap-0
             border border-gray-700 hidden`, 
@@ -292,7 +368,7 @@ class FolderView {
     }
 
     /**
-     * Unified function to create and populate TreeView list items
+     * Unified function to create and populate list items
      * @param {String} name                name of item
      * @param {("file"|"folder")} type     type of item
      * @param {Array.<number>} path        path of this item in the dirArray
@@ -370,11 +446,11 @@ class FolderView {
     }
     
     /**
-     * Traverse a tree by the given path indices array
-     * @param {Array} tree          tree structure to navigate
+     * Traverse a DirArrayItem tree by the given path indices array
+     * @param {DirArrayItem[]} tree tree structure to navigate
      * @param {Array.<number>} path array of indices to traverse
-     * @returns {Array|undefined} item from tree if path is valid,
-     *                            otherwise undefined
+     * @returns {DirArrayItem[]|undefined} 
+     *          item from tree if path is valid, otherwise undefined
      */
     traverse(tree, path) {
         // root ("" => [""] => [NaN])
@@ -390,9 +466,9 @@ class FolderView {
     }
 
     /**
-     * Traverse a tree by the given path indices array
+     * Traverse a DirArrayItem tree by the given path indices array
      * and returns the named path
-     * @param {Array} tree          tree structure to navigate
+     * @param {DirArrayItem[]} tree tree structure to navigate
      * @param {Array.<number>} path array of indices to traverse
      * @returns {String|undefined} name path if path is valid,
      *                             otherwise undefined
@@ -408,6 +484,11 @@ class FolderView {
         return this.cfg.soundPath + pathNames.join("/");
     }
     
+    /**
+     * tree item click handler, bound to the parent tree UL
+     * @param {MouseEvent} e 
+     * @param {FolderView} inst 
+     */
     treeClick(e, inst) { //'sphilip
         if (e.target.dataset.path === undefined) return;
         if (e.target.href) e.preventDefault();
@@ -418,6 +499,11 @@ class FolderView {
         inst.navigate(path);
     }
 
+    /**
+     * list item click handler, bound to the parent list UL
+     * @param {MouseEvent} e 
+     * @param {FolderView} inst 
+     */
     listClick(e, inst) {
         if (e.target.dataset.path === undefined) return;
         if (e.target.href) e.preventDefault();
@@ -433,6 +519,12 @@ class FolderView {
         }
     }
 
+    /**
+     * Navigates to the given path array and show its contents in the list view
+     * @param {Array.<number>} path path of item indices to navigate
+     * @param {DirArrayItem[]} [dirArray] 
+     * @returns {FolderView} this
+     */
     navigate(path, dirArray = undefined) {
         this.list.replaceChildren();
         if (!dirArray)
@@ -452,11 +544,19 @@ class FolderView {
         return this;
     }
 
+    /**
+     * Show this FolderView
+     * @returns {FolderView} this
+     */
     show() {
         this.el.classList.remove("hidden");
         return this;
     }
     
+    /**
+     * Hide this FolderView
+     * @returns {FolderView} this
+     */
     hide() {
         this.el.classList.add("hidden");
         return this;
