@@ -1,10 +1,16 @@
 // REQUIRES handlebars.js
 
-// quick element creator
-// @param {string} name    Element nodeName
-// @param {string} classes Element className
-// @param {Object} attrs   keyvalues -> element attributes
-// @param {HTMLElement|string} ...content  elements to append()
+/**
+ * Quick element maker
+ * @param {string} name     Element nodeName
+ * @param {string} classes  Element className
+ * @param {Object} attrs    keyvalues -> element attributes
+ * @param {Object} [attrs.dataset] keyvalues -> element dataset
+ * @param {Object} [attrs.class] keyvalues -> element style
+ * @param {string} [attrs.class] apply element style directly
+ * @param {...HTMLElement|string} content   elements to append()
+ * @returns {HTMLElement} the created element
+ */
 function qEl(name, classes = "", attrs = {}, ...content) {
     const el = document.createElement(name);
     el.className = classes;
@@ -21,7 +27,13 @@ function qEl(name, classes = "", attrs = {}, ...content) {
 
     return el;
 }
-// quick icon maker, ready to be appended
+
+/**
+ * quick icon maker, ready to be appended
+ * @param {string} name icon ID
+ * @param {string} activeName icon ID for "active" state (check CSS for implementation
+ * @returns {DocumentFragment} document fragment containing the DOM element
+ */
 function createIconFragment(name, activeName=null) {
     activeName = activeName ?? name;
     const template = Handlebars.compile(`
@@ -36,52 +48,107 @@ function createIconFragment(name, activeName=null) {
     return fragment;
 }
 
+/** Manages sentence history
+ * @requires Handlebars
+ * @prop {Element} container DOM container for sentence history
+ */
 class SentenceHistory {
     localStorageProp = "sentence-history";
     defaultTemplateSelector = "#sentence-history-template"
 
+    /**
+     * @param {Element} container where the history list DOM will be constructed
+     * @param {HTMLTextAreaElement} target text area to read/write values from/to
+     * @param {Object} [options]
+     * @param {number} [options.maxEntries]
+     * @param {string} [options.templateSelector]
+     */
     constructor(container, target, options = {}) {
         if (!container instanceof Element)
             throw TypeError("container must be an element")
+        /**
+         * HTML Element to populate the history
+         * @type {Element}
+         * @public
+         */
         this.container = container;
 
         if (!target instanceof HTMLTextAreaElement)
             throw TypeError("target must be a textarea element")
+        /**
+         * TextArea element to read/write sentence from/to
+         * @type {HTMLTextAreaElement}
+         * @public
+         */
         this.target = target;
         
+        /**
+         * maximum number of entries before we start clearing old ones
+         * @type {number}
+         * @public
+         */
         this.maxEntries = options?.maxEntries ?? 50;
+        /**
+         * a querySelector string pointing to an element whose contents we will
+         * use as template for history item instance in DOM
+         * @type {string}
+         */
         this.templateSelector = options?.templateSelector 
             ?? this.defaultTemplateSelector;
+        /**
+         * compiled Handlebar template from the element defined in 
+         * this.templateSelector
+         * @type {Function}
+         */
         this.template = Handlebars
             .compile(document.querySelector(this.templateSelector).innerHTML);
 
+        /**
+         * stores the history entries 
+         * @type {Object[]}
+         */
         this.entries = this.loadFromStorage()
         .map(el => {return {text: el}});
         this.domAddEntries(this.entries);
     }
 
+    /**
+     * Event handler for DOM entries
+     * @param {MouseEvent} e 
+     * @param {SentenceHistory} inst 
+     */
     domEntryClick(e, inst) {
         const whichEl = e.target,
         entryRef = inst.entries.find(item => item.el === e.currentTarget) ?? null;
 
+        // no associated history entry found
         if (!entryRef) {
             //e.currentTarget.remove()
             console.log("missing ref... how did we got here?", e.currentTarget);
 
-        } else if (e.type == "dblclick" && e.target === e.currentTarget) {
+        } 
+        // double click on DOM entry -> insert to textarea
+        else if (e.type == "dblclick" && e.target === e.currentTarget) {
             inst.target.value = entryRef.text;
             this.mru(entryRef);
             
-        } else if (whichEl.dataset.act === "insert") {
+        } 
+        // clicked insert button
+        else if (whichEl.dataset.act === "insert") {
             inst.target.value = entryRef.text;
             this.mru(entryRef);
 
-        } else if (whichEl.dataset.act === "remove") {
+        } 
+        // clicked remove button
+        else if (whichEl.dataset.act === "remove") {
             inst.remove(entryRef.text);
         }
     }
 
-    // put the entry to the top (i.e. to end)
+    /**
+     * puts the entry to the top (i.e. to end of this.entries array)
+     * @param {Object} entry the entry object
+     */
     mru(entry) {
         const idx = this.entries.indexOf(entry);
         if (idx === -1) return;
@@ -92,12 +159,17 @@ class SentenceHistory {
         this.container.insertBefore(entry.el, this.container.firstChild);
     }
 
+    /**
+     * populate given container with DOM elements representing the entries
+     * @param {Object} entries 
+     * @param {Element} targetEl 
+     */
     domAddEntries(entries, targetEl=this.container) {
-        const fragment = new DocumentFragment();
+        const fragment = new DocumentFragment(),
+        dummy = document.createElement("div");
         entries.forEach(entry => {
             if (entry.el) return;
 
-            const dummy = document.createElement("div");
             dummy.innerHTML = this.template(entry); // instantiate handlebar template
             entry.el = dummy.firstElementChild;
             fragment.prepend(dummy.firstElementChild); 
@@ -117,6 +189,11 @@ class SentenceHistory {
 
     }
 
+    /**
+     * Check if history has the given string
+     * @param {string} str string to find
+     * @returns 
+     */
     has(str) {
         return this.entries.find(entry => entry.text === str)
     }
@@ -214,8 +291,14 @@ class FolderView {
         this.list.onclick = e => this.listClick(e, this);
     }
 
-    // got a lot of duplicate code that creates list item representing file/folder
-    // so here's the extract
+    /**
+     * Unified function to create and populate TreeView list items
+     * @param {String} name                name of item
+     * @param {("file"|"folder")} type     type of item
+     * @param {Array.<number>} path        path of this item in the dirArray
+     * @param  {...Element|String} content DOM content
+     * @returns {HTMLLIElement}            created LI element
+     */
     _makeLi(name, type, path, ...content) {
         return qEl("li", `${type} truncate`, {}, 
             qEl("a", "", { 
@@ -230,12 +313,14 @@ class FolderView {
         );
     }
 
-    // @desc  populates a UL with a list tree 
-    // @param {HTMLUlElement} el    the target element
-    // @param {Array} dirTree       a nested tree-like array
-    // @param {Array} path          an array of paths for tree traversal
-    //                              (called only by recursion)
-    // @returns the first param so we can slot this in qEl
+    /** 
+     * populates a UL with a directory tree 
+     * @param {HTMLUlElement} el    the target element
+     * @param {Array} dirTree       the whole directory tree
+     * @param {Array.<number>} path path of the directory tree to the current item
+     *                              (called only by recursion)
+     * @returns {HTMLUlElement} the first param so we can slot this in qEl
+     */
     loadTree(el, dirTree, path=[]) {
         const fragment = document.createDocumentFragment();
         dirTree.forEach((item, index) => {
@@ -255,6 +340,13 @@ class FolderView {
         return el;
     }
 
+    /** 
+     * populates a UL with a directory list (1 level only)
+     * @param {HTMLUlElement} el    the target element
+     * @param {Array} dirArr        the whole directory tree
+     * @param {Array.<number>} path path of the directory tree to the current item
+     * @returns {HTMLUlElement} the first param so we can slot this in qEl
+     */
     loadList(el, dirArr, path=[]) {
         const fragment = document.createDocumentFragment();
 
@@ -277,6 +369,13 @@ class FolderView {
         return el;
     }
     
+    /**
+     * Traverse a tree by the given path indices array
+     * @param {Array} tree          tree structure to navigate
+     * @param {Array.<number>} path array of indices to traverse
+     * @returns {Array|undefined} item from tree if path is valid,
+     *                            otherwise undefined
+     */
     traverse(tree, path) {
         // root ("" => [""] => [NaN])
         if (path.length === 1 && isNaN(path[0]))
@@ -289,6 +388,15 @@ class FolderView {
         });
         return branch;
     }
+
+    /**
+     * Traverse a tree by the given path indices array
+     * and returns the named path
+     * @param {Array} tree          tree structure to navigate
+     * @param {Array.<number>} path array of indices to traverse
+     * @returns {String|undefined} name path if path is valid,
+     *                             otherwise undefined
+     */
     getNamedPath(tree, path) {
         const pathNames = [];
         let branch = tree;
