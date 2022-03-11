@@ -215,21 +215,6 @@ const speakHistory = new SentenceHistory(
     document.querySelector("#sentences")
 );
 
-// load the file view
-// (temporary setup)
-/*
-async function loadFolderView() {
-    const pathFile = await fetch("valve_sound/paths.json");
-    const pathArr = await pathFile.json();
-    const fv = new FolderView(
-        document.querySelector("#filebrowser-container"),
-        pathArr
-    );
-    fv.show();
-}
-loadFolderView();
-*/
-
 document.querySelector("#sentences").focus();
 
 // ui toggles
