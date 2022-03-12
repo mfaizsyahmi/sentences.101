@@ -3,7 +3,8 @@
 ;
 ; requires AutoHotKey to run (https://www.autohotkey.com/)
 ; REQUIRES JSON.ahk (https://github.com/cocobelgica/AutoHotkey-JSON)
-; download and drop the JSON.ahk in one of the library folders
+; download and drop the JSON.ahk together with this file, 
+; or in one of the library folders
 ; (ref: https://www.autohotkey.com/docs/Functions.htm#lib)
 ;
 ; HOW TO USE

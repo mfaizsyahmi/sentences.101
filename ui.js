@@ -50,7 +50,6 @@ function createIconFragment(name, activeName=null) {
 
 /** Manages sentence history
  * @requires Handlebars
- * @prop {Element} container DOM container for sentence history
  */
 class SentenceHistory {
 
@@ -206,7 +205,7 @@ class SentenceHistory {
     /**
      * Check if history has the given string
      * @param {string} str string to find
-     * @returns {(SentenceHistoryEntry|undefined)} a found entry object, or undefined
+     * @returns {SentenceHistoryEntry|undefined} a found entry object, or undefined
      * @public
      */
     has(str) {
@@ -286,16 +285,6 @@ class SentenceHistory {
  * Representation of a game/mod's sound folder contents in the DOM
  */
 class FolderView {
-    /**
-     * @typedef DirArrayItem
-     * @type {[name: string, sizeOrContent: number|DirArrayItem[]]}
-     */
-    /**
-     * @typedef {Object} GameCfg
-     * @prop {string} soundPath relative path to sound folder for the particular game
-     * @prop {DirArrayItem[]} dirArray nested arrays representing directory contents
-     */
-
     /**
      * @param {HTMLElement} container
      * @param {GameCfg} cfg

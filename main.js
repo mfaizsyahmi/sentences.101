@@ -1,5 +1,26 @@
-// load game cfgs, which loads their dirArrays
-async function loadGameCfg(options = {}) {
+/**
+ * @typedef DirArrayItem
+ * @type {[name: string, sizeOrContent: number|DirArrayItem[]]}
+ */
+/**
+ * @typedef {Object} GameCfg
+ * @prop {string} id unique game/mod name. use the game/mod folder name
+ * @prop {string} name name of game/mod
+ * @prop {string} soundPath relative path to sound folder for the particular game
+ * @prop {string} listPath relative path to file containing the game/mod's sound folder dirArray
+ * @prop {boolean} [required] mark base game that can't be unselected (i.e. "valve")
+ * @prop {DirArrayItem[]} [dirArray]   holds directory list array at runtime
+ * @prop {FolderView} [folderView]     reference to associated FolderView at runtime
+ * @prop {TextView} [sentencesTxtView] reference to associated TextView at runtime 
+ */
+
+/**
+ * load game cfgs, which loads their dirArrays
+ * @param {Object} [options]
+ * @param {string} [options.cfgfile] path to file containing gameCfg array json
+ * @returns {GameCfg[]} gameCfg array
+ */
+async function loadGameCfgs(options = {}) {
     const settings = Object.assign({
         cfgfile : "gameCfg.json"
     }, options);
@@ -27,6 +48,18 @@ async function loadGameCfg(options = {}) {
     return gameCfg;
 }
 
+/**
+ * Takes the GameCfg array and creates:
+ * - game selection in the left sidebar/drop menu
+ * - file view for each game/mod
+ * - sentences.txt text view for each game/mod
+ * @param {GameCfg[]} gameCfg 
+ * @param {Object} [options]
+ * @param {string} [options.gameSelectSelector]  selector for game select container in sidebar
+ * @param {string} [options.filePathSelector]    selector for file view tab container
+ * @param {string} [options.fileBrowserSelector] selector for file view container
+ * @param {string} [options.txtFileSelector]     selector for sentences.txt text view container
+ */
 async function populateGames(gameCfg, options = {}) {
     const settings = Object.assign({
         gameSelectSelector  : "#sound-paths",
@@ -35,16 +68,15 @@ async function populateGames(gameCfg, options = {}) {
         txtFileSelector     : "#section-txt"
     }, options);
 
-    // local settings
+    // load local settings
     const localSettings = JSON.parse(localStorage["settings"]?.selectedGames ?? "[]");
 
-    // populate ui
+    // create document fragment and get references to all the containers
     const fragment = document.createDocumentFragment(),
     gameSelectContainer = document.querySelector(settings.gameSelectSelector),
     filePathContainer = document.querySelector(settings.filePathSelector),
     fileBrowserContainer = document.querySelector(settings.fileBrowserSelector),
     txtFilecontainer = document.querySelector(settings.txtFileSelector);
-
 
     // game config list
     fragment.append(...gameCfg.map(cfg => {
@@ -136,16 +168,9 @@ async function populateGames(gameCfg, options = {}) {
     });
 }
 let gameCfg;
-loadGameCfg()
+loadGameCfgs()
 .then(result => {
     gameCfg = result;
-    /*
-    while (gameCfg.every( cfg => cfg.hasOwnProperty("dirArrayLoaded"))) {
-        // wait until every dirArray gets loaded
-        // this should have already happened but somehow it's still not synchronous!
-        console.log("waiting...")
-    }
-    */
     populateGames(gameCfg);
 });
 
@@ -253,6 +278,8 @@ function doClearHistory() {
     speakHistory.clear();
 }
 
+// play/stop preview
+// called by FolderView list items
 function playPreview(src) {
     const el = document.querySelector("#audioPreview");
     el.src = src;
