@@ -1,13 +1,45 @@
+/**
+ * @typedef VOXMod
+ * @prop {number} [s] start (0-100)
+ * @prop {number} [e] end (0-100)
+ * @prop {number} [v] volume (0-100)
+ * @prop {number} [p] pitch (0-100)
+ * @prop {number} [t] time compression (0-100)
+ */
+
+/**
+ * Wrapper for AudioBuffer.
+ * Allows you to get buffered audio with VOX modifiers applied.
+ * 
+ * NOTE: Only start/end/time mods are applied to audiobuffers. 
+ *       Pitch is applied to getSourceNode. Volume has to be applied at the gain node.
+ */
 class BufferedAudio {
-	
+	BASEMOD = ""
+	/**
+	 * @param {AudioContext} ctx 
+	 * @param {AudioBuffer} buf 
+	 */
 	constructor(ctx, buf) {
+		/**
+		 * @type {AudioContext}
+		 */
 		this.ctx = ctx;
+		/**
+		 * @type {Map<string,AudioBuffer>}
+		 */
 		this.bufMap = new Map();
 		this.bufMap.set("",  buf);
 		
 		return this;
 	}
 	
+	/**
+	 * creates and returns an AudioBuffer with VODMod applied
+	 * @param {VOXMod} mod modifier to apply
+	 * @returns {AudioBuffer} AudioBuffer with VODMod applied
+	 * @private
+	 */
 	_newModdedBuffer(mod) {
 		const modSpec = VOXSpeaker.parseMod(mod, VOXSpeaker.defaultMod),
 		buf = this.bufMap.get(""),
@@ -54,6 +86,12 @@ class BufferedAudio {
 		return newbuf;
 	}
 	
+	/**
+	 * returns an AudioBuffer with VODMod applied
+	 * @param {VOXMod|string} [mod] modifier to apply
+	 * @returns {AudioBuffer} AudioBuffer with VODMod applied
+	 * @public
+	 */
 	getBuffer(mod = "") {
 		if (mod instanceof Object)
 			mod = VOXSpeaker.modToString(mod);
@@ -64,6 +102,12 @@ class BufferedAudio {
 		return this.bufMap.get(mod);
 	}
 	
+	/**
+	 * returns an AudioBufferSourceNode with VODMod applied
+	 * @param {VOXMod|string} [mod] modifier to apply
+	 * @returns {AudioBufferSourceNode} AudioBufferSourceNode with VODMod applied
+	 * @public
+	 */
 	getSourceNode(mod = "") {
 		const modSpec = VOXSpeaker.parseMod(mod, VOXSpeaker.defaultMod);
 		return new AudioBufferSourceNode(this.ctx, {
@@ -79,14 +123,30 @@ class VOXSpeaker extends EventTarget {
 	parseRE = /(?<path>\w+\/)|(?<name>\w+!?|\.|,)(?:\((?<mod1>.*?)\))?|\((?<modall>.*?)\)/g;
 	
 	constructor(options) {
+		// calls EventTarget's constructor
 		super();
+		/**
+		 * @type {AudioContext}
+		 */
 		this.ctx = new AudioContext();
+		/**
+		 * @type {GainNode}
+		 */
 		this.gainNode = this.ctx.createGain(); // modulated by the sentence
+		/**
+		 * @type {GainNode}
+		 */
 		this.masterVolumeNode = this.ctx.createGain(); // master volume
 		this.gainNode.connect(this.masterVolumeNode);
 		this.masterVolumeNode.connect(this.ctx.destination);
 		
+		/**
+		 * @type {Map<string, BufferedAudio>}
+		 */
 		this.audioMap = new Map();
+		/**
+		 * @type {String[]}
+		 */
 		this._soundPaths = ["valve_sound/"];
 		
 		this.status = "ready";
@@ -119,10 +179,19 @@ class VOXSpeaker extends EventTarget {
 		this.dispatchEvent(new Event(val));
 	}
 	
+	/**
+	 * @returns {VOXMod} default mod object
+	 */
 	static get defaultMod() {
 		return {s:0, e:100, t:0, p:100, v:100}
 	}
 	
+	/**
+	 * parses a VOD mod string into a mod object
+	 * @param {string} input 
+	 * @param {VOXMod} [baseObj]
+	 * @returns {VOXMod} 
+	 */
 	static parseMod(input, baseObj = {}) {
 		const result = Object.assign({}, baseObj);
 		if (input instanceof Object) {
@@ -135,7 +204,14 @@ class VOXSpeaker extends EventTarget {
 		
 		return result;
 	}
-	// values matching base will be dropped
+
+	/**
+	 * Converts VOXMod object to mod string. 
+	 * Values matching base will be dropped.
+	 * @param {VOXMod} mod 
+	 * @param {VOXMod} [base] base Vox mod values
+	 * @returns {string} mod string
+	 */
 	static modToString(mod, base = VOXSpeaker.defaultMod) {
 		return Object.entries(mod)
 		.filter(kv => base[kv[0]] !== kv[1])
@@ -143,6 +219,11 @@ class VOXSpeaker extends EventTarget {
 		.join(" ")
 	}
 	
+	/**
+	 * loads a sound file
+	 * @param {string} path path from sound folder (searched in this.soundPaths)
+	 * @returns {BufferedAudio|undefined} BufferedAudio if loaded, else undefined
+	 */
 	async loadToBuffer(path) {
 		if (this.audioMap.has(path.toLowerCase())) return;
 		const srcList = this.soundPaths.map(soundPath => new URL(soundPath + path + ".wav", location));
@@ -166,10 +247,27 @@ class VOXSpeaker extends EventTarget {
 		
 		return this.audioMap.get(path.toLowerCase());
 	}
+
+	/** Clears the audio cache */
 	clearAudioCache() {
 		this.audioMap.clear();
 	}
 	
+	/**
+	 * @typedef wordListItem
+	 * @prop {string} name 
+	 * @prop {VOXMod} mod
+	 */
+	/**
+	 * @typedef parseSentenceReturnObject
+	 * @prop {RegExpExecArray[]} parts raw RegExp match object
+	 * @prop {wordListItem[]} wordList 
+	 */
+	/**
+	 * parses a sentence string
+	 * @param {string} sentence 
+	 * @returns {parseSentenceReturnObject}
+	 */
 	parseSentence(sentence)	{
 		// parse the sentence into parts
 		const parts = [];
@@ -216,6 +314,10 @@ class VOXSpeaker extends EventTarget {
 		return { parts, wordList }
 	}
 
+	/**
+	 * Speak a given sentence
+	 * @param {string} sentence 
+	 */
 	async speak(sentence) {
 		this.stop();
 		
@@ -252,6 +354,11 @@ class VOXSpeaker extends EventTarget {
 		this.playNextWord(this.audioList);
 	}
 	
+	/**
+	 * Plays the next word in audioList.
+	 * @param {Object[]} audioList 
+	 * @private
+	 */
 	playNextWord(audioList = this.audioList) {
 		if (!audioList.length) {
 			this.gainNode.gain.value = 1;
@@ -263,9 +370,16 @@ class VOXSpeaker extends EventTarget {
 		let newItem = audioList.shift();
 		this.gainNode.gain.value = newItem.vol;
 		newItem.node?.start();
+		/**
+		 * @type {AudioBufferSourceNode}
+		 */
 		this.currentAudioNode = newItem.node;
 	}
 	
+	/**
+	 * plays a sound
+	 * @param {string} name path to sound
+	 */
 	async play(name) {
 		if (!this.audioMap.has(name))
 			await this.loadToBuffer(name);
@@ -275,6 +389,9 @@ class VOXSpeaker extends EventTarget {
 		node.start();
 	}
 	
+	/**
+	 * Stops currently playing sentence
+	 */
 	stop() {
 		this.audioList?.splice(0, this.audioList.length);
 		this.currentAudioNode?.stop();
