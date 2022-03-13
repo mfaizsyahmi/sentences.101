@@ -37,12 +37,12 @@
 		dt { @apply decoration-blue-400 }
 		dd { @apply text-gray-300 }
 
-		.mark-comment { @apply text-gray-500 }
-		.mark-id      { @apply text-blue-400 }
-		.mark-path    { @apply underline decoration-2 decoration-green-600 }
-		.mark-word    { @apply underline decoration-2 decoration-blue-400 }
-		.mark-mod-all { @apply underline decoration-2 decoration-amber-500 }
-		.mark-mod-one { @apply underline decoration-2 decoration-yellow-300 }
+		.mark-comment { @apply block text-gray-500 }
+		.mark-id      { @apply inline-block text-blue-400; margin-right: 1ch }
+		.mark-path    { @apply inline-block underline decoration-2 decoration-green-600 }
+		.mark-word    { @apply inline-block underline decoration-2 decoration-blue-400 }
+		.mark-mod-all { @apply inline-block underline decoration-2 decoration-amber-500 }
+		.mark-mod-one { @apply inline-block underline decoration-2 decoration-yellow-300 }
 
 		/* phone screen */
 		.section-collapsed:not(.sidebar) {
@@ -116,6 +116,8 @@ gap-2">
 						<ul class="submenu">
 							<li><label><input type="checkbox" name="historyEnable" checked> Auto-add history</label>
 							<li><label><input type="checkbox" name="fileAutoPlay"  checked> Auto-play files</label>
+							<li><label><input type="checkbox" name="txtWordWrap"   checked> Word-wrap</label>
+							<li>
 							<li><button type="button" onclick="doClearAudioCache(e)">Clear audio cache</button>
 						</ul>
 					</li>
