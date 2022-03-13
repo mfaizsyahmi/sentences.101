@@ -69,14 +69,16 @@ async function populateGames(gameCfg, options = {}) {
     }, options);
 
     // load local settings
-    const localSettings = JSON.parse(localStorage["settings"]?.selectedGames ?? "[]");
+    const localSettings = JSON.parse(localStorage["settings"]?.selectedGames ?? "[]"),
+    wordWrap = readSettings().txtWordWrap;
 
     // create document fragment and get references to all the containers
     const fragment = document.createDocumentFragment(),
     gameSelectContainer = document.querySelector(settings.gameSelectSelector),
     filePathContainer = document.querySelector(settings.filePathSelector),
     fileBrowserContainer = document.querySelector(settings.fileBrowserSelector),
-    txtFilecontainer = document.querySelector(settings.txtFileSelector);
+    txtFilecontainer = document.querySelector(settings.txtFileSelector),
+    sentencesTextArea = document.querySelector("#sentences");
 
     // game config list
     fragment.append(...gameCfg.map(cfg => {
@@ -97,7 +99,7 @@ async function populateGames(gameCfg, options = {}) {
         );
         */
         const li = document.createElement("li")
-        li.innerHTML = `<label class="${(!cfg.dirArrayLoaded) ? "text-gray-400": ""}">
+        li.innerHTML = `<label class="${(!cfg.dirArrayLoaded) ? 'text-gray-400': ''}">
             <input type="checkbox" name="selectedGames[]" value="${cfg.id}" 
             ${cfg.required ? "required " : " "}
             ${(cfg.required || localSettings.includes(cfg.id)) ? "checked " : " "}
@@ -132,7 +134,9 @@ async function populateGames(gameCfg, options = {}) {
         // sentences.txt view
         cfg.sentencesTxtView = new TextView(txtFilecontainer, {
             loadFile: cfg.soundPath + "sentences.txt",
-            lazyLoad: true
+            lazyLoad: true,
+            wordWrap,
+            targetEl: sentencesTextArea
         });
     });
 
@@ -196,6 +200,9 @@ function doUpdateSettings(e) {
 
     // unused atm
     // localStorage["settings"] = JSON.stringify(currentSettings);
+
+    // word-wrap
+    const wordWrap = settings.txtWordWrap;
     
     // go through selected games to update vox and show/hide file tabs
     const selectedGames = settings["selectedGames[]"] ?? [],
@@ -206,12 +213,17 @@ function doUpdateSettings(e) {
         }
         document.querySelector(`#filePathList li[data-id="${cfg.id}"]`)
             .classList.toggle("hidden", !(cfg.dirArrayLoaded && selectedGames.includes(cfg.id)));
+
+        // word wrap
+        if (cfg.sentencesTxtView)
+            cfg.sentencesTxtView.wordWrap = wordWrap;
     });
     
     // update vox's soundPaths
     if (vox) vox.soundPaths = soundPaths;
     // switch to first tab of file browser
     document.querySelector(`#filePathList li:first-child`).click()
+
 }
 
 document.querySelectorAll("#sidebar-settings input").forEach(el => {
