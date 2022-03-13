@@ -147,12 +147,14 @@ gap-2">
 					class="hidden inline-block align-middle" src="icons/moths.webp">
 			</header>
 			<form class="flex-grow flex flex-col w-full" onsubmit="doSpeak(event)">
-				<textarea id="sentences" class="flex-grow w-full h-48 lg:h-auto resize-none bg-gray-900 text-gray-200 border border-gray-500 p-2"
+				<textarea id="sentences" 
+				class="flex-grow w-full h-48 lg:h-auto resize-none bg-gray-900 text-gray-200 border border-gray-500 p-2"
 					>doop (e95 p103) doctor freeman, (e95) to(e70) anomalous materials test lab immediately(e100)</textarea>
 				<div class="flex flex-wrap justify-between">
 					<div class="self-center m-2 align-middle justify-between">
 						Volume: 
-						<input id="vol" class="align-middle" type="range" min="0" max="100" value="100" oninput="doAdjustVolume(event)"/>
+						<input id="vol" class="align-middle" type="range" 
+						min="0" max="100" value="100" oninput="doAdjustVolume(event)"/>
 					</div>
 					<div class="flex-shrink-0 mr-2 lg:m-0">
 						<button type="submit" class="m-2 mr-0 px-5 py-2 border" id="play">Play</button>
@@ -180,8 +182,10 @@ gap-2">
 				<script type="text/x-handlebars-template" id="sentence-history-template">
 					<div class="flex items-center border border-t-0 border-gray-700 p-2">
 						<div class="flex-grow max-h-24 overflow-auto">{{text}}</div>
-						<button data-act="insert" class="m-2 mr-0 px-3 py-1 text-lg border" title="add to the speak textbox">+</button>
-						<button data-act="remove" class="m-2 mr-0 px-3 py-1 text-lg border" title="remove from history">&times;</button>
+						<button data-act="insert" class="m-2 mr-0 px-3 py-1 text-lg border" 
+						title="add to the speak textbox">+</button>
+						<button data-act="remove" class="m-2 mr-0 px-3 py-1 text-lg border" 
+						title="remove from history">&times;</button>
 					</div>
 				</script>
 			</div>
