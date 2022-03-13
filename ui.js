@@ -130,12 +130,11 @@ class SentenceHistory {
 
     /**
      * Event handler for DOM entries
-     * @param {MouseEvent} e 
-     * @param {SentenceHistory} inst 
+     * @param {MouseEvent} e
      */
-    domEntryClick(e, inst) {
+    domEntryClick(e) {
         const whichEl = e.target,
-        entryRef = inst.entries.find(item => item.el === e.currentTarget) ?? null;
+        entryRef = this.entries.find(item => item.el === e.currentTarget) ?? null;
 
         // no associated history entry found
         if (!entryRef) {
@@ -144,17 +143,17 @@ class SentenceHistory {
         } 
         // double click on DOM entry -> insert to textarea
         else if (e.type == "dblclick" && e.target === e.currentTarget) {
-            inst.target.value = entryRef.text;
+            this.target.value = entryRef.text;
             this.mru(entryRef);
         } 
         // clicked insert button
         else if (whichEl.dataset.act === "insert") {
-            inst.target.value = entryRef.text;
+            this.target.value = entryRef.text;
             this.mru(entryRef);
         } 
         // clicked remove button
         else if (whichEl.dataset.act === "remove") {
-            inst.remove(entryRef.text);
+            this.remove(entryRef.text);
         }
     }
 
@@ -263,7 +262,7 @@ class SentenceHistory {
 
     /**
      * save entries to localStorage
-     * @param {Object[]} entries 
+     * @param {SentenceHistoryEntry[]} entries 
      * @private
      */
     saveToStorage(entries) {
@@ -476,33 +475,31 @@ class FolderView {
     /**
      * tree item click handler, bound to the parent tree UL
      * @param {MouseEvent} e 
-     * @param {FolderView} inst 
      */
-    treeClick(e, inst) { //'sphilip
+    treeClick(e) { //'sphilip
         if (e.target.dataset.path === undefined) return;
         if (e.target.href) e.preventDefault();
 
         const path = e.target.dataset.path.split(",")
             .filter(el => el.length).map(el => parseInt(el));
 
-        inst.navigate(path);
+        this.navigate(path);
     }
 
     /**
      * list item click handler, bound to the parent list UL
      * @param {MouseEvent} e 
-     * @param {FolderView} inst 
      */
-    listClick(e, inst) {
+    listClick(e) {
         if (e.target.dataset.path === undefined) return;
         if (e.target.href) e.preventDefault();
 
         const path = e.target.dataset.path.split(",")
             .filter(el => el.length).map(el => parseInt(el)),
-        dirItem = inst.traverse(inst.dirArray, path);
+        dirItem = this.traverse(this.dirArray, path);
     
         if (Array.isArray(dirItem[1])) {
-            inst.navigate(path);
+            this.navigate(path);
         } else if (readSettings().fileAutoPlay) {
             playPreview(e.target.href);
         }
@@ -554,23 +551,59 @@ class FolderView {
 }
 
 class TextView {
+    // no multiline or global, as this regex is executed per line
+    textLineRe = /^(?:(?<comment>\/\/.*)|(?<id>\S+)\s+(?<sentence>.*))$/d;
+
     constructor(container, options = {}) {
         const settings = Object.assign({
             lazyLoad: false,
+            wordWrap: false,
+            targetEl: undefined
         }, options);
 
+        /**
+         * @type {HTMLElement}
+         */
         this.container = container;
 
-        this.textEl = qEl("pre", "absolute w-full h-fit p-2", {}, "// sentences.txt content here");
+        /**
+         * @type {HTMLPreElement}
+         */
+        this.textEl = qEl("pre", "absolute w-full h-fit p-2", {}, 
+            "// sentences.txt content here"
+        );
+        /**
+         * @type {HTMLDivElement}
+         */
         this.markupEl = qEl("div", "markup absolute w-full h-fit p-2", {});
-        this.el = qEl("div", "hidden textview w-full h-full relative overflow-auto", {}, this.markupEl, this.textEl);
+        /**
+         * @type {HTMLDivElement}
+         */
+        this.el = qEl(
+            "div", 
+            "hidden textview w-full h-full relative overflow-auto", 
+            {}, 
+            this.markupEl, 
+            this.textEl
+        );
         this.container.append(this.el);
+        this.markupEl.onclick = this.clickHandler.bind(this);
+        this.markupEl.ondblclick = this.clickHandler.bind(this);
 
+        /**
+         * @type {string}
+         */
         this._filePath = settings.loadFile;
 
-        if (settings.loadFile && !settings.lazyLoad) {
+        this.wordWrap = settings.wordWrap;
+
+        /** 
+         * @type {?HTMLTextAreaElement}
+         */
+        this.targetEl = settings.targetEl
+
+        if (settings.loadFile && !settings.lazyLoad)
             this.loadFile(settings.loadFile);
-        }
     }
 
     async loadFile(filePath) {
@@ -579,7 +612,118 @@ class TextView {
         // this escapes bespoke characters (not really)
         //const textNode = document.createTextNode(this.textContent);
         //this.textEl.append(textNode);
-        this.textEl.textContent = this.textContent;
+        this.textEl.textContent = "";
+        //this.textEl.textContent = this.textContent;
+        this.markupEl.append(this.textMarkupHtml(this.textContent));
+    }
+
+    /**
+     * @type {boolean}
+     */
+    get wordWrap() {
+        return this._wordWrap
+    }
+    set wordWrap(val) {
+        this._wordWrap = val;
+        this.markupEl.classList.toggle("whitespace-nowrap", !val);
+    }
+
+    /**
+     * @typedef slicePartDef
+     * @type {[indices: [start: number, end: number], type: string, text: string]}
+     */
+    /**
+     * @typedef slicePartResult
+     * @type {[type: string, text: string]}
+     */
+    /**
+     * slices up a string according to the parts
+     * @param {string} str
+     * @param {slicePartDef[]} mparts array of things to slice
+     * @param {string} [defType=""] default type for parts that didn't get sliced
+     * @return {slicePartResult[]}
+     */
+    stringMatchSlice(str, mparts, defType="") {
+        const parts = [];
+        let index = 0;
+        mparts.forEach(mpart => {
+            if (mpart[0][0] > index)
+                parts.push([defType, str.slice(index, mpart[0][0])])
+            parts.push(mpart.slice(1));
+            index = mpart[0][1]
+        });
+        parts.push([defType, str.slice(index)]);
+
+        return parts;
+    }
+
+    parseContent(text) {
+        return text.split(/\r?\n/)
+            .map(line => this.textLineRe.exec(line))
+    }
+
+    sentenceMarkupHTML(sentence) {
+        const classMap = {
+            name : "word",
+            mod1 : "mod-one",
+            modall : "mod-all"
+        },
+        classTransform = mgname => `mark-${classMap[mgname] ?? mgname}`,
+
+        /**
+         * @type {[indices: [start: number, end: number], type: string, text: string][]}
+         */
+        mparts = VOXSpeaker.parseSentenceRaw(sentence)
+        .flatMap(m => Object.entries(m.groups)
+            .filter(kv => kv[1])
+            .map(kv => [m.indices.groups[kv[0]], kv[0], kv[1]])
+        ),
+        /**
+         * @type {[type: string, text: string][]}
+         */
+        parts = [];
+        let index = 0;
+        mparts.forEach(mpart => {
+            if (mpart[0][0] > index)
+                parts.push(["", sentence.slice(index, mpart[0][0])])
+            parts.push(mpart.slice(1));
+            index = mpart[0][1]
+        });
+        parts.push(["", sentence.slice(index)])
+
+        return parts.map(item => item[0]
+            ? qEl("span", classTransform(item[0]), {}, item[1])
+            : item[1]
+        )
+    }
+
+    textMarkupHtml(text) {
+        const fragment = new DocumentFragment();
+        fragment.append(...this.parseContent(text)
+        .map(m => {
+            if (m?.indices.groups.comment) {
+                return qEl("div", "line mark-comment", {}, m.groups.comment);
+            } else if (m) {
+                return qEl("div", "line", {}, 
+                    qEl("span", "mark-id", {}, m.groups.id),
+                        qEl("span", "mark-sentence", {},
+                            ...this.sentenceMarkupHTML(m.groups.sentence)
+                        )
+                    )
+            } else {
+                return qEl("div", "line", {}, "\xa0")
+            }
+        }));
+        return fragment;
+    }
+
+    clickHandler(e) {
+        console.log(e.type);
+        if (e.type === "dblclick" 
+        && e.target.classList.contains("mark-id")
+        && this.targetEl) {
+            this.targetEl.value = e.target.nextSibling.textContent
+        }
     }
 
     show() {
