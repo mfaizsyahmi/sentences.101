@@ -203,7 +203,7 @@ gap-2">
 				<button class="px-2 ml-2" onclick="doClearHistory(event)" 
 				title="Clear history">Clear</button>
 			</header>
-			<div id="history" class="">
+			<div id="history" class="flex flex-col">
 				<script type="text/x-handlebars-template" id="sentence-history-template">
 					<div class="flex items-center border border-t-0 border-gray-700 p-2">
 						<div class="flex-grow max-h-24 overflow-auto">{{text}}</div>
@@ -277,7 +277,7 @@ gap-2">
 					</svg>
 				</a>
 			</header>
-			<div class="p-2 border border-gray-700 flex gap-2">
+			<div class="p-2 border border-gray-700 flex flex-col md:flex-row md:gap-2">
 				<dl>
 					<!-- <div><dt>hgrunt/clik clik oh! shit! clik</dt></div> -->
 					<div>
