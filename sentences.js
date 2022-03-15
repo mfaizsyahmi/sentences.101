@@ -179,12 +179,13 @@ class BufferedAudio {
 	/**
 	 * returns an AudioBufferSourceNode with VODMod applied
 	 * @param {VOXMod|string} [mod] modifier to apply
+	 * @param {AudioContext|OfflineAudioContext} [ctx] audio context to use
 	 * @returns {AudioBufferSourceNode} AudioBufferSourceNode with VODMod applied
 	 * @public
 	 */
-	getSourceNode(mod = "") {
+	getSourceNode(mod = "", ctx = this.ctx) {
 		const modSpec = VOXSpeaker.parseMod(mod, VOXSpeaker.defaultMod);
-		return new AudioBufferSourceNode(this.ctx, {
+		return new AudioBufferSourceNode(ctx, {
 			buffer: this.getBuffer(mod),
 			playbackRate: modSpec.p / 100
 		});
@@ -300,7 +301,8 @@ class VOXSpeaker extends EventTarget {
 	 */
 	async loadToBuffer(path) {
 		if (this.audioMap.has(path.toLowerCase())) return;
-		const srcList = this.soundPaths.map(soundPath => new URL(soundPath + path + ".wav", location));
+		const srcList = this.soundPaths
+		.map(soundPath => new URL(soundPath + path + ".wav", location));
 		
 		let wavFile = null;
 		while (!wavFile?.ok && srcList.length) {
@@ -356,7 +358,7 @@ class VOXSpeaker extends EventTarget {
 	/**
 	 * parses a sentence string
 	 * @param {string} sentence sentence string to parse
-	 * @returns {parseSentenceReturnObject}
+	 * @returns {parseSentenceReturnObject} object with match array and word list
 	 */
 	parseSentence(sentence)	{
 		const parts = VOXSpeaker.parseSentenceRaw(sentence);
@@ -400,13 +402,10 @@ class VOXSpeaker extends EventTarget {
 	}
 
 	/**
-	 * Speak a given sentence
-	 * @param {string} sentence 
+	 * make sure all the words are loaded
+	 * @param {wordListItem[]} wordList 
 	 */
-	async speak(sentence) {
-		this.stop();
-		
-		const { wordList } = this.parseSentence(sentence);
+	async preloadSounds(wordList) {
 		const soundsToLoad = [];
 		wordList.forEach(item => {
 			if (!this.audioMap.has(item.name)) {
@@ -417,43 +416,242 @@ class VOXSpeaker extends EventTarget {
 		// load the sounds
 		if (soundsToLoad.length) {
 			this.status = "medialoading";
-			await Promise.allSettled(soundsToLoad.map(path => this.loadToBuffer(path)))
+			await Promise.allSettled(soundsToLoad
+				.map(path => this.loadToBuffer(path))
+			)
 		}
 		this.status = 'medialoaded';
-		this.status = 'ready';
-		
-		// prepares the array of nodes
+	}
+
+	/**
+	 * @typedef audioListItem
+	 * @prop {BufferedAudio} obj BufferedAudio object
+	 * @prop {VOXMod} mod modifier for this audio bit
+	 * @prop {BaseAudioContext} ctx context to use to create the source node
+	 * @prop {AudioBufferSourceNode} node source node that emits the sound. 
+	 *                                    controls pitch (i.e. playback rate)
+	 * @prop {GainNode} gain gainNode to control volume. source node connects to this.
+	 * @prop {number} offset time offset for the source node 
+	 * @prop {AudioNode} [connectTarget] if given, the audio chain connects to this 
+	 *                                   instead of ctx.destination
+	 */
+	/**
+	 * Prepares an audioList out of the wordList
+	 * (incl. connecting source nodes and events)
+	 * @param {wordListItem[]} wordList 
+	 * @param {Object} [options]
+	 * @param {BaseAudioContext} [options.ctx] audio context to use
+	 * @param {AudioNode} [options.connectTarget] the node chain connect to this
+	 * @returns {audioListItem[]}
+	 */
+	makeAudioList(wordList, options = {}) {
+		const settings = Object.assign({
+			//ctx: this.ctx,
+			//gainNode: this.gainNode
+		}, options);
+
 		const audioList = wordList.map(item => { return {
 			obj : this.audioMap.get(item.name),
-			node : this.audioMap.get(item.name)?.getSourceNode(item.mod) ?? null,
-			vol : item.mod.v / 100 // for gainNode
+			mod: item.mod, // for NOD
+			ctx: settings.ctx, // for NOD
+			connectTarget: settings.connectTarget,
+			// node is to be created on demand
+			get node() {
+				if (!this._node && this.obj && this.ctx) {
+					this._node = this.obj
+						.getSourceNode(this.mod, this.ctx) ?? null;
+				};
+				if (this.gain)
+					this._node?.connect(this.gain)
+
+				return this._node;
+			},
+			_gain: settings.gainNode, 
+			get gain() {
+				if (!this._gain && this.ctx) {
+					this._gain = this.ctx.createGain();
+					this._gain.gain.value = this.mod.v / 100;
+					this._gain.connect(
+						this.connectTarget ?? this.ctx.destination
+					);
+				}
+
+				return this._gain;
+			}
 		}});
-		audioList.forEach((item, i, arr) => {
-			item.node?.connect(this.gainNode);
-			item.node?.addEventListener("ended", _ => this.playNextWord(arr));
+
+		if (!audioList.every(item => item.obj))
+			throw "Couldn't load all sounds"
+
+		return audioList;
+	}
+
+	/**
+	 * Speak a given sentence
+	 * @param {string} sentence 
+	 */
+	async speak(sentence) {
+		this.stop();
+		
+		const { wordList } = this.parseSentence(sentence);
+		
+		// preload all sounds
+		await this.preloadSounds(wordList);
+
+		this.status = 'ready';
+		
+		// prepare the audioList
+		this.audioList = this.makeAudioList(wordList, {
+			ctx: this.ctx,
+			gainNode: this.gainNode,
 		});
 		
-		this.audioList = audioList;
-		
+		/*
 		this.status = "speakstart"; // set status, which will dispatch event
 		this.playNextWord(this.audioList);
+		*/
+		this.playAudioList(this.audioList)
+		.then(_=> delete this.audioList)
+	}
+
+	/**
+	 * record the sentence to an offline context
+	 * @param {string} sentence 
+	 * @param {Object} [options]
+	 * @param {number} [options.sampleRate = 22050]
+	 * @returns {AudioBuffer} the recorded speech
+	 */
+	async recordSpeech(sentence, options = {}) {
+		const { wordList } = this.parseSentence(sentence),
+		settings = Object.assign({
+			sampleRate : 22050
+		}, options);
+		
+		// preload all sounds
+		await this.preloadSounds(wordList);
+
+		// from wordList, extract audio buffer, pitch, and vol
+		const audioList = wordList.map(wordItem => { return [
+			this.audioMap.get(wordItem.name).getBuffer(wordItem.mod),
+			wordItem.mod.p / 100,
+			wordItem.mod.v / 100
+		]})
+		// then construct entire offlineaudiocontext graphs for each buffer
+		.map(([buffer, rate, vol]) => { return {
+			ctx: new OfflineAudioContext(
+				1, 
+				Math.ceil(buffer.duration / rate * settings.sampleRate), 
+				settings.sampleRate
+			),
+			get gain() {
+				const gain = this.ctx.createGain();
+				gain.connect(this.ctx.destination);
+				gain.gain.value = vol;
+				return gain;
+			},
+			get node() {
+				const node = new AudioBufferSourceNode(this.ctx, {
+					buffer,
+					playbackRate: rate
+				});
+				node.connect(this.gain);
+				return node;
+			}
+		}})
+		
+		// start the source nodes now (i.e. press play)
+		audioList.forEach(item => item.node.start());
+
+		// press record on all the offline contexts
+		// and get the rendered buffers
+		const jobDone = await Promise
+		.allSettled(audioList.map(async item => {
+			return await item.ctx.startRendering()
+		})),
+		renderedBuffers = jobDone.map(thing => thing.value);
+
+		// prepare the final buffer
+		const totalLength = renderedBuffers.reduce((cum, buf) => cum + buf.length, 0),
+		combinedBuffer = new AudioBuffer({
+			numberOfChannels: 1,
+			length: totalLength,
+			sampleRate: settings.sampleRate
+		}),
+		bufArr = combinedBuffer.getChannelData(0);
+		
+		// copies all the buffer into the final one
+		renderedBuffers.reduce((offset, buf) => {
+			bufArr.set(buf.getChannelData(0), offset);
+			return offset + buf.length;
+		}, 0);
+
+		return combinedBuffer;
+	}
+
+	async downloadSpeech(sentence) {
+		// record the speech
+		const recorded = await this.recordSpeech(sentence),
+		timestamp = new Date( Math.floor(Date.now()) ).toISOString()
+			.replace("T","_").replaceAll(":","-"),
+		name = `sentences.101 recording ${timestamp}.wav`;
+
+		make_download(recorded, recorded.length, name);
 	}
 	
 	/**
+	 * plays the given audioList
+	 * @param {audioListItem[]} audioList 
+	 * @param {boolean} [online=true] whether the audio is playing on normal or 
+	 *                                offline audio context. used to update status.
+	 */
+	playAudioList(audioList, online = true) {
+		// set the offsets for every sound
+		// also gets the total duration
+		const totalDuration = audioList.reduce((offset, cur) => {
+			cur.offset = offset;
+			return offset + (cur.node.buffer.duration / cur.node.playbackRate.value);
+		}, 0);
+
+		// update status
+		this.status = online ? "speakstart" : "renderstart"
+		
+		// start every source nodes at their time offsets
+		audioList.forEach(item => {
+			item.node.start(item.ctx.currentTime + item.offset)
+		});
+
+		return new Promise((resolve, _) => {
+			// update status at the end of things
+			const endUpdate = () => {
+				this.status = online ? "speakend" : "renderend";
+				resolve()
+			};
+			audioList[audioList.length - 1].node.onended = endUpdate;
+			setTimeout(_ => endUpdate(), totalDuration * 1000); // backup
+		})
+	}
+
+	/**
 	 * Plays the next word in audioList.
-	 * @param {Object[]} audioList 
+	 * @param {Object[]} [audioList = this.audioList] audioList to work on
+	 * @param {GainNode} [gainNode = this.gainNode] gainNode to reset volume after finished
 	 * @private
 	 */
-	playNextWord(audioList = this.audioList) {
+	playNextWord(audioList = this.audioList, gainNode = this.gainNode) {
 		if (!audioList.length) {
-			this.gainNode.gain.value = 1;
+			if (gainNode)
+				gainNode.gain.value = 1;
 			this.status = "speakend";
 			this.status = "ready";
 			return;
 		}
 		
+		/**
+		 * @type {audioListItem}
+		 */
 		let newItem = audioList.shift();
-		this.gainNode.gain.value = newItem.vol;
+		if (newItem.gain)
+			newItem.gain.gain.value = newItem.vol;
 		newItem.node?.start();
 		/**
 		 * @type {AudioBufferSourceNode}
@@ -464,22 +662,39 @@ class VOXSpeaker extends EventTarget {
 	/**
 	 * plays a sound
 	 * @param {string} name path to sound
+	 * @returns {AudioBufferSourceNode} the playing source node, so you can stop it later
 	 */
 	async play(name) {
 		if (!this.audioMap.has(name))
-			await this.loadToBuffer(name);
+			this.loadToBuffer(name);
 		
 		const node = this.audioMap.get(name)?.getSourceNode();
 		node.connect(this.ctx.destination);
 		node.start();
+
+		return node;
 	}
 	
 	/**
 	 * Stops currently playing sentence
+	 * @param {audioListItem[]} audioList the playing audioList. defaults to this.audioList
 	 */
-	stop() {
+	stop(audioList = this.audioList) {
+		if (!audioList) return;
+
+		audioList.forEach(item => {
+			try {
+				item.node?.stop()
+			} catch(e) {
+				// do nothing
+			}
+		});
+		if (audioList === this.audioList)
+			delete this.audioList;
+		/*
 		this.audioList?.splice(0, this.audioList.length);
 		this.currentAudioNode?.stop();
 		this.gainNode.gain.value = 1;
+		*/
 	}
 }
