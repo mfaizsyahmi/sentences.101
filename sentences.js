@@ -591,8 +591,8 @@ class VOXSpeaker extends EventTarget {
 	async downloadSpeech(sentence) {
 		// record the speech
 		const recorded = await this.recordSpeech(sentence),
-		timestamp = new Date( Math.floor(Date.now()) ).toISOString()
-			.replace("T","_").replaceAll(":","-"),
+		timestamp = new Date( Date.now() ).toISOString()
+			.replace("T","_").replaceAll(":","-").replace(/\.\d+/,""),
 		name = `sentences.101 recording ${timestamp}.wav`;
 
 		make_download(recorded, recorded.length, name);
