@@ -1,0 +1,70 @@
+<svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" version="1.1">
+<symbol id="svg-bin" width="16px" height="16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+<path d="m5.75 4.25v-2.5h4.5v2.5m-6.5 1v9h8.5v-9m-9.5-.5h10.5"/>
+</symbol>
+<symbol id="svg-chevron-down" width="16px" height="16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+<path d="m3.75 5.75 4.25 4.5 4.25-4.5"/>
+</symbol>
+<symbol id="svg-chevron-up" width="16px" height="16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+<path d="m12.25 10.25-4.25-4.5-4.25 4.5"/>
+</symbol>
+<symbol id="svg-cog" width="16px" height="16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+<circle cx="8" cy="8" r="1.75"/>
+<path d="m6.75 1.75-.5 1.5-1.5 1-2-.5-1 2 1.5 1.5v1.5l-1.5 1.5 1 2 2-.5 1.5 1 .5 1.5h2.5l.5-1.5 1.5-1 2 .5 1-2-1.5-1.5v-1.5l1.5-1.5-1-2-2 .5-1.5-1-.5-1.5z"/>
+</symbol>
+<symbol id="svg-cross" width="16px" height="16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+<path d="m11.25 4.75-6.5 6.5m0-6.5 6.5 6.5"/>
+</symbol>
+<symbol id="svg-download" width="16px" height="16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+<path d="m3.25 13.25h9m-8.5-6.5 4 3.5 4-3.5m-4-5v8.5"/>
+</symbol>
+<symbol id="svg-file" width="16px" height="16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+<polygon points="2.75 1.75,8.25 1.75,13.25 6.75,13.25 14.25,2.75 14.25"/>
+<polyline points="7.75 2.25,7.75 7.25,12.75 7.25"/>
+</symbol>
+<symbol id="svg-folder" width="16px" height="16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+<polygon points="1.75 2.75,1.75 13.25,14.25 13.25,14.25 4.75,8.25 4.75,6.75 2.75"/>
+</symbol>
+<symbol id="svg-github" width="16px" height="16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+<path d="m5.75 14.25s-.5-2 .5-3c0 0-2 0-3.5-1.5s-1-4.5 0-5.5c-.5-1.5.5-2.5.5-2.5s1.5 0 2.5 1c1-.5 3.5-.5 4.5 0 1-1 2.5-1 2.5-1s1 1 .5 2.5c1 1 1.5 4 0 5.5s-3.5 1.5-3.5 1.5c1 1 .5 3 .5 3"/>
+<path d="m5.25 13.75c-1.5.5-3-.5-3.5-1"/>
+</symbol>
+<symbol id="svg-link-external" width="16px" height="16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+<polyline points="8.25 2.75,2.75 2.75,2.75 13.25,13.25 13.25,13.25 7.75"/>
+<path d="m13.25 2.75-5.5 5.5m3-6.5h3.5v3.5"/>
+</symbol>
+<symbol id="svg-media-play" width="16px" height="16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+<polygon points="2.75 2.75,2.75 13.25,12.25 8"/>
+</symbol>
+<symbol id="svg-menu-hamburger" width="16px" height="16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+<path d="m2.75 12.25h10.5m-10.5-4h10.5m-10.5-4h10.5"/>
+</symbol>
+<symbol id="svg-menu-kebab" width="16px" height="16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+<circle cx="8" cy="2.5" r=".75"/>
+<circle cx="8" cy="8" r=".75"/>
+<circle cx="8" cy="13.5" r=".75"/>
+</symbol>
+<symbol id="svg-menu-meatball" width="16px" height="16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+<circle cx="2.5" cy="8" r=".75"/>
+<circle cx="8" cy="8" r=".75"/>
+<circle cx="13.5" cy="8" r=".75"/>
+</symbol>
+<symbol id="svg-minus" width="16px" height="16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+<path d="m13.25 7.75h-10.5"/>
+</symbol>
+<symbol id="svg-music" width="16px" height="16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+<circle cx="4" cy="12" r="2.25"/>
+<circle cx="12" cy="11" r="2.25"/>
+<polyline points="6.25 12,6.25 2.75,14.25 1.75,14.25 11"/>
+</symbol>
+<symbol id="svg-pencil" width="16px" height="16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+<polygon points="1.75 11.25,1.75 14.25,4.75 14.25,14.25 4.75,11.25 1.75"/>
+<line x1="8.75" y1="4.75" x2="11.25" y2="7.25"/>
+</symbol>
+<symbol id="svg-plus" width="16px" height="16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+<path d="m12.75 7.75h-10m5-5v10"/>
+</symbol>
+<symbol id="svg-square" width="16px" height="16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+<rect height="10.5" width="10.5" y="2.75" x="2.75"/>
+</symbol>
+</svg>
