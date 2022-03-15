@@ -38,8 +38,8 @@ function createIconFragment(name, activeName=null) {
     activeName = activeName ?? name;
     const template = Handlebars.compile(`
     <svg class="icon stroke-current" viewBox="0 0 16 16">
-        <use class="normal" xlink:href="#{{name}}"/>
-        <use class="active" xlink:href="#{{activeName}}"/>
+        <use class="normal" xlink:href="#svg-{{name}}"/>
+        <use class="active" xlink:href="#svg-{{activeName}}"/>
     </svg>`),
     fragment = document.createDocumentFragment(),
     dummy = document.createElement("i");
@@ -133,7 +133,7 @@ class SentenceHistory {
      * @param {MouseEvent} e
      */
     domEntryClick(e) {
-        const whichEl = e.target,
+        const whichEl = e.target.closest("button"),
         entryRef = this.entries.find(item => item.el === e.currentTarget) ?? null;
 
         // no associated history entry found

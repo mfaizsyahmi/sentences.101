@@ -262,6 +262,7 @@ document.querySelectorAll("[data-act='toggle'], [data-act='toggle'] + h2").forEa
     });
 })
 
+// speak
 function doSpeak(e) {
     e.preventDefault();
     const sentence = e.currentTarget.elements.sentences.value;
@@ -279,7 +280,13 @@ function doClearAudioCache(e) {
     e.preventDefault();
     vox.clearAudioCache();
 }
+function doDownloadSpeech(e) {
+    e.preventDefault();
+    const sentence = document.querySelector("#sentences").value;
+    vox.downloadSpeech(sentence);
+}
 
+// history 
 function doAddHistory() {
     speakHistory.add(document.querySelector("#sentences").value);
 }
