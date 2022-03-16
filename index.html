@@ -20,6 +20,7 @@
 	<style type="text/tailwindcss">
 	  @layer utilities {
 		/* general */
+		.button { @apply m-2 px-3 py-2 border }
 		.tab li { @apply p-2 inline-block }
 		.tab li.hidden { display: none }
 		.tab li.active { @apply bg-blue-500/20 }
@@ -114,11 +115,12 @@ gap-2">
 					</li>
 					<li class="bold lg:mb-2 flex-shrink-0">Settings
 						<ul class="submenu">
+							<li><label><input type="checkbox" name="logonspeak" checked> Welcome speak</label>
 							<li><label><input type="checkbox" name="historyEnable" checked> Auto-add history</label>
 							<li><label><input type="checkbox" name="fileAutoPlay"  checked> Auto-play files</label>
 							<li><label><input type="checkbox" name="txtWordWrap"   checked> Word-wrap</label>
-							<li>
-							<li><button type="button" onclick="doClearAudioCache(e)">Clear audio cache</button>
+							<li class="separator">
+							<li><button type="button" class="button" onclick="doClearAudioCache(e)">Clear audio cache</button>
 						</ul>
 					</li>
 				</ul>

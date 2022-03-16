@@ -87,7 +87,7 @@ Or just drop the folders onto this script/program's icon in Explorer.
 main(args) {
 	GLOBAL defaultFileName
 
-	if (!A_Args.length()) {
+	if (!args.length()) {
 		showHelp()
 		ExitApp
 	}

@@ -286,6 +286,16 @@ function doDownloadSpeech(e) {
     vox.downloadSpeech(sentence);
 }
 
+function doWelcomeSpeak() {
+    vox.speak(`fvox/bell HEV_logon(e12) 
+    percent(s35 e80) seek_medic(s75 e83) hev_damage(s70 e80) 
+    one(t20 e90) powermove_overload(s78 e85) one(t20 e90)`/*, 
+    HEV_logon(s60) */);
+}
+if (readSettings().logonspeak) {
+    doWelcomeSpeak()
+}
+
 // history 
 function doAddHistory() {
     speakHistory.add(document.querySelector("#sentences").value);
